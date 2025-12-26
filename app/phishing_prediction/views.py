@@ -49,6 +49,7 @@ def predictions(request):
 
     return Response({'error': 'Invalid request method.'}, status=405)
 
+
 def vectorize_url(url):
     # Define your SQLIA signatures as per the provided mapping
     sqlia_signatures = [
@@ -79,17 +80,19 @@ def vectorize_url(url):
 
     return np.array(vector)
 
+
 # Load your trained PCA and MLPClassifier model
-import os
 
 # Dynamically set the paths using os.path for better portability and flexibility
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 pca_path = os.path.join(BASE_DIR, '..', 'dumped_models', 'pca.joblib')
-model_path = os.path.join(BASE_DIR, '..', 'dumped_models', 'phishing', 'rf.joblib')
+model_path = os.path.join(
+    BASE_DIR, '..', 'dumped_models', 'phishing', 'rf.joblib')
 
 pca = joblib.load(os.path.abspath(pca_path))
 model = joblib.load(os.path.abspath(model_path))
+
 
 class PredictSQLInjection(APIView):
     permission_classes = [permissions.AllowAny,]
@@ -126,8 +129,6 @@ class PredictSQLInjection(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_packet_info(request):
@@ -155,7 +156,6 @@ def create_packet_info(request):
 
     # Handle other HTTP methods if needed
     return Response({'error': 'Invalid request method'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 @api_view(['POST'])
@@ -210,11 +210,13 @@ class FileUploadView(APIView):
             os.makedirs(uploads_folder_path, exist_ok=True)
 
             # Full path to the single pcap file
-            single_pcap_path = os.path.join(uploads_folder_path, single_pcap_filename)
+            single_pcap_path = os.path.join(
+                uploads_folder_path, single_pcap_filename)
 
             try:
                 # Delete files in 'uploads' folder, keeping only the latest 5
-                files = sorted(os.listdir(uploads_folder_path), key=lambda x: os.path.getmtime(os.path.join(uploads_folder_path, x)))
+                files = sorted(os.listdir(uploads_folder_path), key=lambda x: os.path.getmtime(
+                    os.path.join(uploads_folder_path, x)))
                 files_to_delete = files[:-5]  # Exclude the latest 5 files
 
                 for filename in files_to_delete:
@@ -237,6 +239,7 @@ class FileUploadView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 def download_media(request):
     # Set the path to your media folder
     media_root = settings.MEDIA_ROOT
@@ -251,7 +254,8 @@ def download_media(request):
 
     # Open the zip file and create a response with the file
     with open(zip_filepath, 'rb') as zip_file:
-        response = HttpResponse(zip_file.read(), content_type='application/zip')
+        response = HttpResponse(
+            zip_file.read(), content_type='application/zip')
         response['Content-Disposition'] = f'attachment; filename={zip_filename}'
 
     # Delete the temporary zip file
@@ -265,7 +269,8 @@ def download_last_uploaded_file(request):
     media_root = settings.MEDIA_ROOT
 
     # Get a list of all files (including those in subdirectories) in the media folder
-    all_files = [f for f in glob.glob(os.path.join(media_root, '**', '*'), recursive=True) if os.path.isfile(f)]
+    all_files = [f for f in glob.glob(os.path.join(
+        media_root, '**', '*'), recursive=True) if os.path.isfile(f)]
 
     # Sort the files by modification time in descending order
     sorted_files = sorted(all_files, key=os.path.getmtime, reverse=True)
@@ -276,7 +281,8 @@ def download_last_uploaded_file(request):
 
         # Open the file and create a response with its content
         with open(last_uploaded_file, 'rb') as file:
-            response = HttpResponse(file.read(), content_type='application/octet-stream')
+            response = HttpResponse(
+                file.read(), content_type='application/octet-stream')
             response['Content-Disposition'] = f'attachment; filename={os.path.relpath(last_uploaded_file, media_root)}'
 
         return response
