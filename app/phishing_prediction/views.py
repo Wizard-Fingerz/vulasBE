@@ -83,8 +83,8 @@ def vectorize_url(url):
 # replace with the actual path to your PCA object
 pca = joblib.load('/home/deepsolutions/SQLInjection/sqlinjection/model/pca.joblib')
 # replace with the actual path to your model
-model = joblib.load('/home/deepsolutions/SQLInjection/sqlinjection/model/mp.joblib')
-
+model = joblib.load('/app/dumped_models/phishing/rf.joblib')
+# C:\Users\DELL\Documents\WebProject\Vulas\vulasBE\app\dumped_models\phishing\rf.joblib
 
 class PredictSQLInjection(APIView):
     permission_classes = [permissions.AllowAny,]
