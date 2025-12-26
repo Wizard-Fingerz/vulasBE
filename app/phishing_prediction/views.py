@@ -80,11 +80,16 @@ def vectorize_url(url):
     return np.array(vector)
 
 # Load your trained PCA and MLPClassifier model
-# replace with the actual path to your PCA object
-pca = joblib.load('/home/deepsolutions/SQLInjection/sqlinjection/model/pca.joblib')
-# replace with the actual path to your model
-model = joblib.load('/app/dumped_models/phishing/rf.joblib')
-# C:\Users\DELL\Documents\WebProject\Vulas\vulasBE\app\dumped_models\phishing\rf.joblib
+import os
+
+# Dynamically set the paths using os.path for better portability and flexibility
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+pca_path = os.path.join(BASE_DIR, '..', 'dumped_models', 'pca.joblib')
+model_path = os.path.join(BASE_DIR, '..', 'dumped_models', 'phishing', 'rf.joblib')
+
+pca = joblib.load(os.path.abspath(pca_path))
+model = joblib.load(os.path.abspath(model_path))
 
 class PredictSQLInjection(APIView):
     permission_classes = [permissions.AllowAny,]
