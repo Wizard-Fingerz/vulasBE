@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from user.utils import generate_private_key
 from .models import User, Device
-from .serializers import UserSerializer, DeviceSerializer
+from .serializers import UserSerializer, DeviceSerializer, RegisterSerializer
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import generics
@@ -15,6 +15,30 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from .serializers import LoginSerializer
+
+
+class RegisterView(generics.CreateAPIView):
+    """
+    Public account creation. This is the endpoint the browser extension's
+    register.js already calls (POST /register/) — it previously 404'd
+    because nothing implemented it; UserViewSet.create() is a different,
+    authenticated action (setting a subscription plan on an existing user).
+    """
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username,
+        }, status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -70,6 +94,11 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
 
 class LoginView(generics.GenericAPIView):
+    # Without this, LoginView inherited the project-wide default of
+    # IsAuthenticated (see REST_FRAMEWORK in settings.py), which meant you
+    # had to already be authenticated to be allowed to log in — every
+    # request here 403'd before the serializer even ran.
+    permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):

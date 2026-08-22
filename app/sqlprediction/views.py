@@ -233,13 +233,17 @@ class FileUploadView(APIView):
             # Assuming 'uploaded_file' has a 'file' field representing the uploaded file
             uploaded_file_path = uploaded_file.file.path
 
-            # Specify the path of the single pcap file where you want to append the content
-            media_folder = 'media'
+            # Specify the path of the single pcap file where you want to append the content.
+            # Was hardcoded as the relative string 'media', which only lined
+            # up with settings.MEDIA_ROOT (used by the download views below)
+            # when manage.py happened to be run from the project root. Using
+            # settings.MEDIA_ROOT directly makes this correct regardless of
+            # the current working directory.
             uploads_folder = 'uploads'
             single_pcap_filename = 'single_file.pcap'
 
-            # Ensure the 'uploads' folder exists within the 'media' folder
-            uploads_folder_path = os.path.join(media_folder, uploads_folder)
+            # Ensure the 'uploads' folder exists within the media root
+            uploads_folder_path = os.path.join(str(settings.MEDIA_ROOT), uploads_folder)
             os.makedirs(uploads_folder_path, exist_ok=True)
 
             # Full path to the single pcap file

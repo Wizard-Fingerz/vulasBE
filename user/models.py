@@ -13,8 +13,9 @@ class User(AbstractUser):
     is_educational = models.BooleanField(default=False, verbose_name='Educational')
     is_enterprise = models.BooleanField(default=False, verbose_name='Enterprise')
     private_key = models.CharField(max_length=15, unique=True,blank = True,null = True)
-    subscription_type = models.CharField(max_length=20, choices=[('individual', 'Individual'), ('cooperate', 'Cooperate'), ('enterprise', 'Enterprise')])
+    subscription_type = models.CharField(max_length=20, blank=True, default='', choices=[('individual', 'Individual'), ('cooperate', 'Cooperate'), ('enterprise', 'Enterprise')])
     private_key_expiration = models.DateTimeField(null=True, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
 
 
     class Meta:

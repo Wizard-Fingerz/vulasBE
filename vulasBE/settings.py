@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fonidg)*(+ap1ni9wir%3+c6&)41%zz6jtot$iq(g(e+n0$j()'
+# Set DJANGO_SECRET_KEY in the environment for any real deployment. The
+# fallback below is only for local development so the project still runs
+# out of the box.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-fonidg)*(+ap1ni9wir%3+c6&)41%zz6jtot$iq(g(e+n0$j()',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to True to keep local `manage.py runserver` working unchanged;
+# set DJANGO_DEBUG=False (and DJANGO_ALLOWED_HOSTS) when deploying.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -137,12 +152,30 @@ USE_TZ = True
 
 AUTH_USER_MODEL = 'user.User'
 
-CORS_ORIGIN_ALLOW_ALL = True  # This allows all origins
+# CORS
+# Wide open by default only while DEBUG is on (local dev / the unpacked
+# extension talking to localhost). In a real deployment set DJANGO_DEBUG=False
+# and list the real origins (e.g. the published extension + VulasFE domain)
+# in CORS_ALLOWED_ORIGINS via the environment.
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS', '').split(',')
+    if origin.strip()
+]
 
-# Static files (CSS, JavaScript, Images)
+# Static & media files
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# MEDIA_ROOT/MEDIA_URL were previously undefined here even though
+# app/sqlprediction/views.py (FileUploadView, download_media,
+# download_last_uploaded_file) reads settings.MEDIA_ROOT — that silently
+# fell back to Django's global default of '' (the project root). Defining
+# them explicitly keeps uploaded pcap files inside a dedicated media/ folder.
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -150,10 +183,24 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.your-email-provider.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your-email@example.com'
-EMAIL_HOST_PASSWORD = 'your-email-password'
-DEFAULT_FROM_EMAIL = 'your-email@example.com'
+# Email
+# Defaults to printing mail to the console in dev so a missing/placeholder
+# SMTP password doesn't make every registration/payment-confirmation request
+# fail. Set DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# (plus the EMAIL_HOST_* vars below) for real delivery.
+EMAIL_BACKEND = os.environ.get(
+    'DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('DJANGO_EMAIL_HOST', 'smtp.your-email-provider.com')
+EMAIL_PORT = int(os.environ.get('DJANGO_EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('DJANGO_EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', 'your-email@example.com')
+EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', 'your-email-password')
+DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'your-email@example.com')
+
+# Payments (Flutterwave)
+# app/views.py (PaymentView) reads settings.FLUTTERWAVE_SECRET_KEY, which
+# also had no definition here — it would have raised AttributeError on the
+# very first payment request. Set the real key via the environment; this
+# empty default just keeps the app importable/testable without it.
+FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY', '')
